@@ -91,7 +91,7 @@ Unit tests for the API are included in the `app/tests/test_sample.py` file. You 
 To run the tests, simply execute:
 
 ```bash
-pytest
+python -m pytest
 ```
 
 ### API Endpoints
