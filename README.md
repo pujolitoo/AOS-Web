@@ -40,8 +40,8 @@ aossample/
 First, clone the project repository to your local machine:
 
 ```bash
-git clone https://github.com/your-username/fastapi_project.git
-cd fastapi_project
+git clone https://github.com/mcastrol/aossample.git
+cd aossample
 ```
 
 ### 2. **Create and Activate a Python Virtual Environment**
