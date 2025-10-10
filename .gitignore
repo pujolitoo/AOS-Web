@@ -1,2 +1,6 @@
 venv
 .DS_Store
+__pycache__/
+app/__pycache__/
+app/models/__pycache__/
+app/routes/__pycache__/

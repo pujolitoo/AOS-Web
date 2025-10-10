@@ -1,5 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from app.models.item import Item
+from app.models.product import Product
+
+from databse import *
 
 router = APIRouter()
 
@@ -21,3 +24,8 @@ def concatenate(param1: str, param2: str):
 @router.get("/length")
 def length_of_string(string: str):
     return {"length": len(string)}
+
+
+@router.put("/products")
+def product_add(prod: Product):
+    db_put(prod)
