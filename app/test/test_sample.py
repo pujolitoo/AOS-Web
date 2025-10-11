@@ -78,6 +78,31 @@ def test_db_remove():
     
     db_clear()
     
+def test_search():
+    
+    id_2 = db_put(Product.model_validate(
+        {
+            "name": "TEST2",
+            "desc": "aaaa",
+            "price": 10.50
+        }
+    ))["id"]
+    
+    id_1 = db_put(Product.model_validate(
+        {
+            "name": "TEST",
+            "desc": "aaaa",
+            "price": 10.50
+        }
+    ))["id"]
+    
+    response = client.get("/products?search=TEST2")
+    
+    assert response.status_code == 200
+    
+    assert len(response.json()) > 0
+    
+    db_clear()
     
 def test_db_insert():
     testprod = {

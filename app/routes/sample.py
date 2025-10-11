@@ -25,6 +25,21 @@ def concatenate(param1: str, param2: str):
 def length_of_string(string: str):
     return {"length": len(string)}
 
+@router.get("/products/{product_id}")
+def product_get(product_id: int):
+    try:
+        temp = db_get(product_id)
+        return dict(temp)
+    except:
+        return {"msg": "Product not listed"}
+    
+@router.get("/products")
+def product_search(search: str):
+    out : list[dict] = []
+    temp = db_search(search)
+    for entry in temp:
+        out.append(dict(entry))
+    return out
 
 @router.post("/products")
 def product_add(prod: Product):
