@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from app.models.item import Item
 from app.models.product import Product
 
-from databse import *
+from ..database import *
 
 router = APIRouter()
 
@@ -26,6 +26,12 @@ def length_of_string(string: str):
     return {"length": len(string)}
 
 
-@router.put("/products")
+@router.post("/products")
 def product_add(prod: Product):
-    db_put(prod)
+    temp = db_put(prod)
+    return temp
+
+@router.patch("/products/{product_id}")
+def product_modify(prod: Product):
+    temp = db_put(prod)
+    return temp
