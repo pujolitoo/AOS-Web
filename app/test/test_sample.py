@@ -28,7 +28,7 @@ def test_length_of_string():
     assert response.json() == {"length": 7}
     
 
-def test_db_unicity():
+def test_db_id_unicity():
     id_1 = db_put(Product.model_validate(
         {
             "name": "TEST",
@@ -59,6 +59,24 @@ def test_db_unicity():
     db_clear()
     
     
+def test_db_remove():
+    prod = db_put(Product.model_validate(
+        {
+            "name": "TEST",
+            "desc": "aaaa",
+            "price": 10.50
+        }
+    ))
+    
+    assert len(db_search(prod["name"])) == 1
+    
+    response = client.delete(f"/products/{prod["id"]}")
+    
+    assert response.status_code == 200
+    
+    assert len(db_search(prod["name"])) == 0
+    
+    db_clear()
     
     
 def test_db_insert():

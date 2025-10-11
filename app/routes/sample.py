@@ -32,6 +32,12 @@ def product_add(prod: Product):
     return temp
 
 @router.patch("/products/{product_id}")
-def product_modify(prod: Product):
+def product_modify(product_id: int, prod: Product):
+    db_delete_entry(product_id)
     temp = db_put(prod)
     return temp
+
+@router.delete("/products/{product_id}")
+def product_delete(product_id: int):
+    db_delete_entry(product_id)
+    return {"msg": "Deleted succesfully"}
