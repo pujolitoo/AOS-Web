@@ -1,40 +1,26 @@
-# ARQUITECTURA ORIENTADA A SERVICIOS 
-## Curso 2025-26 
-## FastAPI Project
+# Product Management Application
 
+## Group 7
+- Members:
+-   Joel Navarro
+-   Matteo Carreiro
+-   Arnau Oller
+-   Jordi Costa
+-   Pau Pujol
+-   Nora Raghai
 
-# FastAPI Project
+## Project objectives
 
-This is a simple FastAPI-based project that includes GET and POST services. It includes:
-- A POST endpoint for processing JSON data.
-- A GET endpoint for concatenating two strings.
-- A GET endpoint for calculating the length of a string.
+Step 1: Create a basic database to store product metadata related to food industry.
+Step 2: Create another database and connect to the first one
+Step 3: Make some algorithm to manage DB and product basic operations
+Step 4: Extend DBs
 
-## Project Structure
+## What we've implemented?
+- We've added new API routes to help the management of product metadata (add, delete, modify, etc..). 
+- We created the first database to store product information
 
-```bash
-aossample/
-│
-├── app/
-│   ├── __init__.py           # Initializes the app as a package
-│   ├── main.py               # Main entry point for the FastAPI application
-│   ├── routes/
-│   │   ├── __init__.py       # Initializes the routes as a package
-│   │   └── sample.py         # Contains the API routes (POST/GET)
-│   ├── models/
-│   │   ├── __init__.py       
-│   │   └── item.py           # Defines the data models using Pydantic
-│   ├── tests/
-│   │   ├── __init__.py       
-│   │   └── test_sample.py    # Contains the unit tests for the API
-│   └── requirements.txt      # Dependencies for the project
-│
-├── venv/                     # Python virtual environment
-└── README.md                 # Project documentation
-```
-
-## Project Setup
-
+## How to run the application
 ### 1. **Clone the Project**
 
 First, clone the project repository to your local machine:
@@ -94,32 +80,14 @@ To run the tests, simply execute:
 python -m pytest
 ```
 
-### API Endpoints
-
-#### POST `/process`
-- **Description**: Accepts a JSON object with two integers and returns their sum.
-- **Request Body**:
-  ```json
-  {
-    "value1": 10,
-    "value2": 5
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "result": 15
-  }
-  ```
-
-#### GET `/concat`
-- **Description**: Concatenates two query parameters.
+## Api testing
+#### GET `/products`
+- **Description**: Search a product.
 - **Query Parameters**:
-  - `param1`: First string to concatenate.
-  - `param2`: Second string to concatenate.
+  - `search`: Search string.
 - **Example Request**:
   ```
-  GET /concat?param1=Hello&param2=World
+  GET /products?search=bike
   ```
 - **Response**:
   ```json
@@ -127,37 +95,7 @@ python -m pytest
     "result": "HelloWorld"
   }
   ```
-
-#### GET `/length`
-- **Description**: Returns the length of a given string.
-- **Query Parameter**:
-  - `string`: The string whose length is to be calculated.
-- **Example Request**:
-  ```
-  GET /length?string=FastAPI
-  ```
-- **Response**:
-  ```json
-  {
-    "length": 7
-  }
-  ```
-
-### 6. **Generate `requirements.txt`**
-
-To generate a `requirements.txt` file after adding new dependencies, run the following command:
-
-```bash
-pip freeze > app/requirements.txt
-```
-
-This will capture the current list of installed packages into the `requirements.txt` file.
-
----
-
-### Notes
-
-- The `app/routes/sample.py` file contains all the route handlers for GET and POST methods.
-- The tests are written using `pytest`, and they can be found in `app/tests/test_sample.py`.
-
-For any issues or contributions, please feel free to open a pull request or an issue.
+  
+## What's next?
+- Implement a verification process to prevent adding invalid product types.
+- 
