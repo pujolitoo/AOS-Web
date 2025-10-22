@@ -11,10 +11,10 @@
 
 ## Project objectives
 
-Step 1: Create a basic database to store product metadata related to food industry.
-Step 2: Create another database and connect to the first one
-Step 3: Make some algorithm to manage DB and product basic operations
-Step 4: Extend DBs
+- Step 1: Create a basic database to store product metadata related to food industry.
+- Step 2: Create another database and connect to the first one
+- Step 3: Make some algorithm to manage DB and product basic operations
+- Step 4: Extend DBs
 
 ## What we've implemented?
 - We've added new API routes to help the management of product metadata (add, delete, modify, etc..). 
