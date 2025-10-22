@@ -91,11 +91,100 @@ python -m pytest
   ```
 - **Response**:
   ```json
+  [{
+    'id': 2,
+    'name': 'Master bike',
+    'desc': 'The best bike of the world XD',
+    'price': 200.5
+  }]
+  ```
+
+  #### GET `/products/{product_id}`
+- **Description**: Get product by its ID.
+- **Query Parameters**:
+  - No parameters
+- **Example Request**:
+  ```
+  GET /products/2
+  ```
+- **Response**:
+  ```json
   {
-    "result": "HelloWorld"
+    'id': 2,
+    'name': 'Master bike',
+    'desc': 'The best bike of the world XD',
+    'price': 200.5
   }
   ```
+
+  #### POST `/products`
+- **Description**: Upload a product.
+- **Query Parameters**:
+  - No parameters
+- **Example Request**:
+  ```
+  POST /products
+  ```
+- **Body example**:
+  ```json
+  {
+    'name': 'Master bike',
+    'desc': 'The best bike of the world XD',
+    'price': 200.5
+  }
+- **Response**:
+  ```json
+  {
+    'id': 2,
+    'name': 'Master bike',
+    'desc': 'The best bike of the world XD',
+    'price': 200.5
+  }
+  ```
+
+#### PATCH `/products/{product_id}`
+- **Description**: Modify a product metadata.
+- **Query Parameters**:
+  - No parameters
+- **Example Request**:
+  ```
+  PATCH /products
+  ```
+  - **Body example**:
+  ```json
+  {
+    'desc': 'Test modification',
+  }
+  
+- **Response**:
+  ```json
+  {
+    'id': 2,
+    'name': 'Master bike',
+    'desc': 'Test modification',
+    'price': 200.5
+  }
+  ```
+
+#### DELETE `/products/{product_id}`
+- **Description**: Deletes a product.
+- **Query Parameters**:
+  - No parameters
+- **Example Request**:
+  ```
+  DELETE /products/2
+  ```
+- **Response**:
+  ```json
+  {
+    "msg": "Deleted succesfully"
+  }
+  ```
+
+  
   
 ## What's next?
 - Implement a verification process to prevent adding invalid product types.
-- 
+- Create a list.txt of basic products an id for clearly managment
+- Create an enviroment for the products managment
+- Simple web interface (GET on /) ?? MAYBE
