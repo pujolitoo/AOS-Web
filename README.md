@@ -107,7 +107,7 @@ python -m pytest
   ]
   ```
 
-  #### GET `/productos/{product_id}`
+#### GET `/productos/{product_id}`
 - **Description**: Retrieve information about a specific product by its ID.
 - **Query Parameters**:
   - No parameters
@@ -125,7 +125,7 @@ python -m pytest
   }
   ```
 
-  #### POST `/productos`
+#### POST `/productos`
 - **Description**: Upload a product.
 - **Query Parameters**:
   - No parameters
@@ -281,7 +281,7 @@ python -m pytest
   }
   ```
 
-  #### GET `/async_sleep`
+#### GET `/async_sleep`
 - **Description**: Asynchronous endpoint that simulates non-blocking wait, useful to test concurrent requests.
 - **Query Parameters**:
   - segundos: (float) Time to wait in seconds.
