@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query, APIRouter
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 import time
 import asyncio
 import signal
@@ -13,16 +12,8 @@ router = APIRouter()
 # MODELOS
 # ==============================
 
-class Producto(BaseModel):
-    id: int
-    nombre: str
-    precio: float
-    stock: int
+from app.models.product import *
 
-class ProductoUpdate(BaseModel):
-    nombre: Optional[str] = None
-    precio: Optional[float] = None
-    stock: Optional[int] = None
 
 # ==============================
 # DATOS EN MEMORIA
