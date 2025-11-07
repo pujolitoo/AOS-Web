@@ -1,134 +1,92 @@
 from fastapi.testclient import TestClient
 from app.main import app
-from app.database import *
 
 client = TestClient(app)
 
-# Test for POST /process
-def test_process_data():
-    response = client.post("/process", json={"value1": 10, "value2": 5})
-    assert response.status_code == 200
-    assert response.json() == {"result": 15}
+# ============================
+# PRUEBAS DE ESTADO Y HEALTH
+# ============================
 
-# Test for POST /process with invalid data
-def test_process_data_invalid():
-    response = client.post("/process", json={"value1": 10})
-    assert response.status_code == 422
+def test_health_check():
+    r = client.get("/health")
+    assert r.status_code == 200
+    assert r.json()["status"] == "ok"
 
-# Test for GET /concat
-def test_concatenate():
-    response = client.get("/concat?param1=Hello&param2=World")
-    assert response.status_code == 200
-    assert response.json() == {"result": "HelloWorld"}
+def test_ready_check():
+    r = client.get("/ready")
+    assert r.status_code in [200, 503]  # puede variar si cambia is_ready
+    assert "ready" in r.json()
 
-# Test for GET /length
-def test_length_of_string():
-    response = client.get("/length?string=FastAPI")
-    assert response.status_code == 200
-    assert response.json() == {"length": 7}
-    
 
-def test_db_id_unicity():
-    id_1 = db_put(Product.model_validate(
-        {
-            "name": "TEST",
-            "desc": "aaaa",
-            "price": 10.50
-        }
-    ))["id"]
-    id_2 = db_put(Product.model_validate(
-        {
-            "name": "TEST2",
-            "desc": "aaaa",
-            "price": 10.50
-        }
-    ))["id"]
-    
-    db_delete_entry(id_1)
-    
-    id_3 = db_put(Product.model_validate(
-        {
-            "name": "TEST3",
-            "desc": "aaaa",
-            "price": 10.50
-        }
-    ))["id"]
-    
-    assert id_3 != id_2
-    
-    db_clear()
-    
-    
-def test_db_remove():
-    prod = db_put(Product.model_validate(
-        {
-            "name": "TEST",
-            "desc": "aaaa",
-            "price": 10.50
-        }
-    ))
-    
-    assert len(db_search(prod["name"])) == 1
-    
-    response = client.delete(f"/products/{prod["id"]}")
-    
-    assert response.status_code == 200
-    
-    assert len(db_search(prod["name"])) == 0
-    
-    db_clear()
-    
-def test_search():
-    
-    id_2 = db_put(Product.model_validate(
-        {
-            "name": "TEST2",
-            "desc": "aaaa",
-            "price": 10.50
-        }
-    ))["id"]
-    
-    id_1 = db_put(Product.model_validate(
-        {
-            "name": "TEST",
-            "desc": "aaaa",
-            "price": 10.50
-        }
-    ))["id"]
-    
-    response = client.get("/products?search=TEST2")
-    
-    assert response.status_code == 200
-    
-    assert len(response.json()) > 0
-    
-    db_clear()
-    
-def test_db_insert():
-    testprod = {
-        "name": "test_product",
-        "desc": "A test product for testing purposes only",
-        "price": 33.5
-    }
-    response = client.post("/products", json=testprod)
-    
-    assert response.status_code == 200
-    
-    print(str(response.json()))
-    
-    prod_id = response.json()['id']
-    
-    found = False
-    try:
-        prod = db_get(prod_id)
-        prod_query = Product.model_validate(testprod)
-        assert prod == prod_query
-        found = True
-    except:
-        pass
-    
-    assert found == True
-    
-    db_clear()
-    db_remove()
+# ============================
+# PRUEBAS CRUD DE PRODUCTOS
+# ============================
 
+def test_listar_productos():
+    r = client.get("/productos")
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, list)
+    assert len(data) >= 1
+    assert "nombre" in data[0]
+
+def test_crear_producto():
+    nuevo = {"id": 99, "nombre": "Auriculares", "precio": 59.99, "stock": 100}
+    r = client.post("/productos", json=nuevo)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["mensaje"] == "Producto creado"
+    assert body["producto"]["nombre"] == "Auriculares"
+
+def test_obtener_producto():
+    r = client.get("/productos/99")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["nombre"] == "Auriculares"
+
+def test_modificar_producto():
+    mod = {"precio": 49.99, "stock": 80}
+    r = client.patch("/productos/99/modificar", json=mod)
+    assert r.status_code == 200
+    p = r.json()["producto"]
+    assert p["precio"] == 49.99
+    assert p["stock"] == 80
+
+def test_actualizar_producto_completo():
+    actualizado = {"id": 99, "nombre": "Auriculares Pro", "precio": 79.99, "stock": 60}
+    r = client.put("/productos/99", json=actualizado)
+    assert r.status_code == 200
+    data = r.json()["producto"]
+    assert data["nombre"] == "Auriculares Pro"
+
+def test_buscar_producto():
+    r = client.get("/productos/buscar?nombre=Auriculares")
+    assert r.status_code == 200
+    data = r.json()
+    assert "resultados" in data
+    assert len(data["resultados"]) >= 1
+
+def test_eliminar_producto():
+    r = client.delete("/productos/99")
+    assert r.status_code == 200
+    msg = r.json()["mensaje"]
+    assert "eliminado" in msg
+
+def test_eliminar_inexistente():
+    r = client.delete("/productos/9999")
+    assert r.status_code == 404
+
+
+# ============================
+# PRUEBAS DE CARGA SIMULADA
+# ============================
+
+def test_burn_cpu_endpoint():
+    r = client.get("/burn_cpu?iterations=2&work_secs=0.1")
+    assert r.status_code == 200
+    assert "estado" in r.json()
+
+def test_async_sleep_endpoint():
+    r = client.get("/async_sleep?segundos=0.2")
+    assert r.status_code == 200
+    assert r.json()["espera"] == 0.2
