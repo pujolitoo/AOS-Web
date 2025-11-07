@@ -131,7 +131,7 @@ python -m pytest
   - No parameters
 - **Example Request**:
   ```
-  POST /products
+  POST /productos
   ```
 - **Body example**:
   ```json
