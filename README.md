@@ -81,43 +81,51 @@ python -m pytest
 ```
 
 ## Api testing
-#### GET `/products`
-- **Description**: Search a product.
+#### GET `/productos`
+- **Description**: Retrieve the complete list of available products.
 - **Query Parameters**:
-  - `search`: Search string.
+  - None
 - **Example Request**:
   ```
-  GET /products?search=bike
+  GET /productos
   ```
 - **Response**:
   ```json
-  [{
-    'id': 2,
-    'name': 'Master bike',
-    'desc': 'The best bike of the world XD',
-    'price': 200.5
-  }]
+  [
+    {
+      "id": 1,
+      "nombre": "Laptop",
+      "precio": 999.99,
+      "stock": 10
+    },
+    {
+      "id": 2,
+      "nombre": "Wireless Mouse",
+      "precio": 25.50,
+      "stock": 50
+    }
+  ]
   ```
 
-  #### GET `/products/{product_id}`
-- **Description**: Get product by its ID.
+  #### GET `/productos/{product_id}`
+- **Description**: Retrieve information about a specific product by its ID.
 - **Query Parameters**:
   - No parameters
 - **Example Request**:
   ```
-  GET /products/2
+  GET /productos/2
   ```
 - **Response**:
   ```json
   {
-    'id': 2,
-    'name': 'Master bike',
-    'desc': 'The best bike of the world XD',
-    'price': 200.5
+    "id": 2,
+    "nombre": "Wireless Mouse",
+    "precio": 25.5,
+    "stock": 50
   }
   ```
 
-  #### POST `/products`
+  #### POST `/productos`
 - **Description**: Upload a product.
 - **Query Parameters**:
   - No parameters
@@ -128,46 +136,90 @@ python -m pytest
 - **Body example**:
   ```json
   {
-    'name': 'Master bike',
-    'desc': 'The best bike of the world XD',
-    'price': 200.5
+    "id": 99,
+    "nombre": "Headphones",
+    "precio": 59.99,
+    "stock": 100
   }
+  ```
 - **Response**:
   ```json
   {
-    'id': 2,
-    'name': 'Master bike',
-    'desc': 'The best bike of the world XD',
-    'price': 200.5
+    "mensaje": "Producto creado",
+    "producto": {
+      "id": 99,
+      "nombre": "Headphones",
+      "precio": 59.99,
+      "stock": 100
+    }
   }
   ```
 
-#### PATCH `/products/{product_id}`
-- **Description**: Modify a product metadata.
+#### PUT `/productos/{id}`
+- **Description**: Replace all fields of an existing product.
 - **Query Parameters**:
   - No parameters
 - **Example Request**:
   ```
-  PATCH /products
+  PUT /productos/99
   ```
   - **Body example**:
   ```json
   {
-    'desc': 'Test modification',
-  }
-  
-- **Response**:
-  ```json
-  {
-    'id': 2,
-    'name': 'Master bike',
-    'desc': 'Test modification',
-    'price': 200.5
+    "mensaje": "Producto actualizado",
+    "producto": {
+      "id": 99,
+      "nombre": "Headphones Pro",
+      "precio": 79.99,
+      "stock": 60
+    }
   }
   ```
 
-#### DELETE `/products/{product_id}`
-- **Description**: Deletes a product.
+- **Response**:
+  ```json
+  {
+    "mensaje": "Producto modificado",
+    "producto": {
+      "id": 99,
+      "nombre": "Headphones",
+      "precio": 49.99,
+      "stock": 80
+    }
+  }
+  ```
+
+#### PATCH `/productos/{id}/modificar`
+- **Description**: Partially update one or more product fields.
+- **Query Parameters**:
+  - No parameters
+- **Example Request**:
+  ```
+  PATCH /productos/99/modificar
+  ```
+  - **Body example**:
+  ```json
+  {
+    "precio": 49.99,
+    "stock": 80
+  }
+  ```
+
+- **Response**:
+  ```json
+  {
+    "mensaje": "Producto modificado",
+    "producto": {
+      "id": 99,
+      "nombre": "Headphones",
+      "precio": 49.99,
+      "stock": 80
+    }
+  }
+  ```
+
+#### DELETE `/productos/{id}`
+- **Description**: Delete an existing product by its ID.
 - **Query Parameters**:
   - No parameters
 - **Example Request**:
@@ -181,6 +233,68 @@ python -m pytest
   }
   ```
 
+#### GET `/health`
+- **Description**: Check if the API service is healthy and operational.
+- **Query Parameters**:
+  - No parameters
+- **Example Request**:
+  ```
+  GET /health
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "ok"
+  }
+  ```
+
+#### GET `/ready`
+- **Description**: Check if the application is ready to receive traffic (useful for AWS load balancer health checks).
+- **Query Parameters**:
+  - No parameters
+- **Example Request**:
+  ```
+  GET /ready
+  ```
+- **Response**:
+  ```json
+  {
+    "ready": true
+  }
+  ```
+
+
+#### GET `/burn_cpu`
+- **Description**: Simulate CPU load for autoscaling testing.
+- **Query Parameters**:
+  - iterations: (int) Number of load iterations.
+  - work_secs: (float) Approximate duration of work per iteration.
+- **Example Request**:
+  ```
+  GET /burn_cpu?iterations=5&work_secs=0.1
+  ```
+- **Response**:
+  ```json
+  {
+    "estado": "carga simulada completada",
+    "iteraciones": 5
+  }
+  ```
+
+  #### GET `/async_sleep`
+- **Description**: Asynchronous endpoint that simulates non-blocking wait, useful to test concurrent requests.
+- **Query Parameters**:
+  - segundos: (float) Time to wait in seconds.
+- **Example Request**:
+  ```
+  GET /async_sleep?segundos=0.5
+  ```
+- **Response**:
+  ```json
+  {
+    "espera": 0.5
+  }
+  ```
   
   
 ## What's next?
