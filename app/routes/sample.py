@@ -23,7 +23,8 @@ from app.models.product import *
 # ==============================
 # DATOS EN MEMORIA
 # ==============================
-
+# Crear DB en un docker 
+# Beanstalk, RDS o similar en producción
 productos: List[Producto] = [
     Producto(id=1, nombre="Monitor 24\"", precio=129.99, stock=50),
     Producto(id=2, nombre="Teclado Mecánico", precio=89.50, stock=150),
