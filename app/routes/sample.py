@@ -1,5 +1,7 @@
-from fastapi import FastAPI, HTTPException, Query, APIRouter
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Query, APIRouter, Request
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
+from pathlib import Path
 import time
 import asyncio
 import signal
@@ -7,6 +9,9 @@ from typing import List, Optional
 from app.app import get_app
 
 router = APIRouter()
+
+# Configurar plantillas (usa la carpeta `app/templates`)
+templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
 
 # ==============================
 # MODELOS
@@ -33,10 +38,11 @@ is_ready = True
 # ENDPOINTS CRUD
 # ==============================
 
-@router.get("/")
-async def root():
-    uptime = int(time.time() - get_app().state.start_time)
-    return {"mensaje": "API de Gestión de Productos", "uptime_segundos": uptime}
+@router.get("/", response_class=HTMLResponse)
+async def root(request: Request):
+        uptime = int(time.time() - get_app().state.start_time)
+        # Renderizar la plantilla Jinja2
+        return templates.TemplateResponse("products.html", {"request": request, "productos": productos, "uptime": uptime})
 
 @router.get("/productos")
 async def listar_productos():

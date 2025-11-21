@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Productos</title>
+  <style>
+    :root{
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --accent:#2563eb;
+      --accent-2:#1e3a8a;
+      --border:#e6e9ef;
+      --radius:10px;
+      --maxw:1100px;
+    }
+
+    *{box-sizing:border-box}
+    body{font-family: Inter, 'Segoe UI', Roboto, Arial, sans-serif;background:var(--bg);margin:0;padding:24px;color:#0f172a}
+    .container{max-width:var(--maxw);margin:0 auto}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    h1{margin:0;font-size:1.6rem;color:var(--accent-2)}
+    .meta{color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 6px 18px rgba(15,23,42,0.06);padding:18px;border:1px solid var(--border)}
+
+    .table-wrap{overflow:hidden;border-radius:8px;margin-top:12px}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    thead tr{background:linear-gradient(90deg,var(--accent) 0%, var(--accent-2) 100%);color:#fff}
+    th, td{padding:12px 14px;text-align:left}
+    th{font-weight:600;font-size:0.95rem}
+    tbody tr{background:transparent;border-bottom:1px solid var(--border)}
+    tbody tr:nth-child(even){background:rgba(15,23,42,0.02)}
+    tbody tr:hover{background:rgba(37,99,235,0.06)}
+
+    .price{font-weight:600;color:var(--accent-2)}
+    .stock{color:var(--muted)}
+
+    /* Responsive: on small screens convert table rows into cards */
+    @media (max-width:720px){
+      table, thead, tbody, th, td, tr{display:block}
+      thead{display:none}
+      tbody tr{margin:10px 0;padding:12px;border-radius:8px;background:var(--card);box-shadow:0 6px 18px rgba(15,23,42,0.04)}
+      td{display:flex;justify-content:space-between;padding:8px 12px;border:none}
+      td::before{content:attr(data-label);color:var(--muted);font-weight:600;margin-right:8px}
+    }
+
+    footer{margin-top:14px;color:var(--muted);font-size:0.9rem}
+  </style>
+</head>
+<body>
+    <div class="container">
+      <header>
+        <div>
+          <h1>Productos</h1>
+          <div class="meta">Uptime: {{ uptime }} segundos • <span>{{ productos|length }} productos</span></div>
+        </div>
+        <div>
+          <button id="btn-show-form" style="background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer">➕ Añadir producto</button>
+        </div>
+      </header>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <caption>Listado de productos</caption>
+            <thead><tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Acciones</th></tr></thead>
+            <tbody>
+            {% for p in productos %}
+              <tr>
+                <td data-label="ID">{{ p.id }}</td>
+                <td data-label="Nombre">{{ p.nombre }}</td>
+                <td data-label="Precio" class="price">{{ "{:.2f}".format(p.precio) }}</td>
+                <td data-label="Stock" class="stock">{{ p.stock }}</td>
+                <td data-label="Acciones">
+                  <button class="btn-delete" data-id="{{ p.id }}" style="background:#f87171;border:none;padding:6px 10px;border-radius:6px;color:#fff;cursor:pointer">Eliminar</button>
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Formulario oculto para añadir productos -->
+      <div id="product-form" class="card" style="margin-top:16px;display:none">
+        <h3>Añadir nuevo producto</h3>
+        <form id="form-add" onsubmit="return false;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="number" id="input-id" placeholder="ID" required style="flex:0 0 100px;padding:8px;border:1px solid var(--border);border-radius:6px">
+            <input type="text" id="input-nombre" placeholder="Nombre" required style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px">
+            <input type="number" step="0.01" id="input-precio" placeholder="Precio" required style="flex:0 0 140px;padding:8px;border:1px solid var(--border);border-radius:6px">
+            <input type="number" id="input-stock" placeholder="Stock" required style="flex:0 0 120px;padding:8px;border:1px solid var(--border);border-radius:6px">
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button id="btn-add" style="background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer">Guardar</button>
+            <button id="btn-cancel" type="button" style="background:#e6e9ef;padding:8px 12px;border-radius:8px;border:none;cursor:pointer">Cancelar</button>
+          </div>
+          <div id="form-msg" style="margin-top:8px;color:var(--muted)"></div>
+        </form>
+      </div>
+
+      <footer>
+        <div class="meta">API: endpoints disponibles en `/productos` (GET, POST, PUT, PATCH, DELETE)</div>
+      </footer>
+    </div>
+</body>
+<script>
+  const btnShow = document.getElementById('btn-show-form');
+  const formWrap = document.getElementById('product-form');
+  const btnCancel = document.getElementById('btn-cancel');
+  const btnAdd = document.getElementById('btn-add');
+  const formMsg = document.getElementById('form-msg');
+
+  btnShow?.addEventListener('click', ()=>{
+    formWrap.style.display = 'block';
+    window.scrollTo({top: formWrap.offsetTop - 20, behavior: 'smooth'});
+  });
+  btnCancel?.addEventListener('click', ()=>{ formWrap.style.display = 'none'; formMsg.textContent = ''; });
+
+  // Añadir producto via fetch
+  btnAdd?.addEventListener('click', async ()=>{
+    formMsg.textContent = '';
+    const id = Number(document.getElementById('input-id').value);
+    const nombre = document.getElementById('input-nombre').value.trim();
+    const precio = Number(document.getElementById('input-precio').value);
+    const stock = Number(document.getElementById('input-stock').value);
+    if(!id || !nombre){ formMsg.textContent = 'ID y Nombre son requeridos'; return; }
+    const payload = { id, nombre, precio, stock };
+    try{
+      const res = await fetch('/productos', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+      const body = await res.json();
+      if(res.ok){
+        formMsg.style.color = 'green'; formMsg.textContent = body.mensaje || 'Creado';
+        setTimeout(()=> location.reload(), 700);
+      } else {
+        formMsg.style.color = 'crimson'; formMsg.textContent = body.detail || JSON.stringify(body);
+      }
+    }catch(err){ formMsg.style.color='crimson'; formMsg.textContent = String(err); }
+  });
+
+  // Borrar producto
+  document.querySelectorAll('.btn-delete').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      const id = btn.getAttribute('data-id');
+      if(!confirm('¿Eliminar producto con ID '+id+'?')) return;
+      try{
+        const res = await fetch('/productos/'+id, {method:'DELETE'});
+        if(res.ok){
+          // Quitar fila del DOM
+          const row = btn.closest('tr'); if(row) row.remove();
+        } else {
+          const body = await res.json(); alert(body.detail || JSON.stringify(body));
+        }
+      }catch(err){ alert(String(err)); }
+    });
+  });
+</script>
+</html>

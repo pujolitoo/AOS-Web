@@ -3,3 +3,4 @@ pytest
 uvicorn
 httpx
 tinydb
+jinja2
