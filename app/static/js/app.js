@@ -64,9 +64,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
   btnCancel?.addEventListener('click', ()=>{ formWrap.style.display = 'none'; formMsg.textContent = ''; });
 
-  // Añadir producto via fetch
+  // Añadir/Actualizar producto via fetch (soporta modo edición)
   btnAdd?.addEventListener('click', async ()=>{
     formMsg.textContent = '';
+    const editingIdEl = document.getElementById('editing-id');
+    const editing = editingIdEl ? editingIdEl.value : '';
     const id = Number(document.getElementById('input-id').value);
     const nombre = document.getElementById('input-nombre').value.trim();
     const precio = Number(document.getElementById('input-precio').value);
@@ -74,13 +76,31 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(!id || !nombre){ await showModal('ID y Nombre son requeridos', {title:'Error', type:'error', confirm:false, okText:'Cerrar'}); return; }
     const payload = { id, nombre, precio, stock };
     try{
-      const res = await fetch('/productos', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-      const body = await res.json();
-      if(res.ok){
-        await showModal(body.mensaje || 'Creado correctamente', {title:'Éxito', type:'info', confirm:false, okText:'Cerrar'});
-        setTimeout(()=> location.reload(), 400);
+      if(editing){
+        // Edit mode -> PUT
+        const res = await fetch('/productos/'+editing, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+        const body = await res.json();
+        if(res.ok){
+          await showModal(body.mensaje || 'Actualizado correctamente', {title:'Éxito', type:'info', confirm:false, okText:'Cerrar'});
+          // Reset form editing state
+          editingIdEl.value = '';
+          document.getElementById('input-id').disabled = false;
+          document.getElementById('form-title').textContent = 'Añadir nuevo producto';
+          document.getElementById('btn-add').textContent = 'Guardar';
+          setTimeout(()=> doSearch(inputSearch.value.trim()), 200);
+        } else {
+          await showModal(body.detail || JSON.stringify(body), {title:'Error', type:'error', confirm:false, okText:'Cerrar'});
+        }
       } else {
-        await showModal(body.detail || JSON.stringify(body), {title:'Error', type:'error', confirm:false, okText:'Cerrar'});
+        // Create
+        const res = await fetch('/productos', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+        const body = await res.json();
+        if(res.ok){
+          await showModal(body.mensaje || 'Creado correctamente', {title:'Éxito', type:'info', confirm:false, okText:'Cerrar'});
+          setTimeout(()=> doSearch(inputSearch.value.trim()), 200);
+        } else {
+          await showModal(body.detail || JSON.stringify(body), {title:'Error', type:'error', confirm:false, okText:'Cerrar'});
+        }
       }
     }catch(err){ await showModal(String(err), {title:'Error', type:'error', confirm:false, okText:'Cerrar'}); }
   });
@@ -94,7 +114,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(!tbody) return;
     tbody.innerHTML = rows.map(p => {
       const precio = (typeof p.precio === 'number') ? p.precio.toFixed(2) : (p.precio || '0.00');
-      return `\n              <tr>\n                <td data-label="ID">${p.id}</td>\n                <td data-label="Nombre">${p.nombre}</td>\n                <td data-label="Precio" class="price">${precio}</td>\n                <td data-label="Stock" class="stock">${p.stock}</td>\n                <td data-label="Acciones">\n                  <button class="btn-delete" data-id="${p.id}" style="background:#f87171;border:none;padding:6px 10px;border-radius:6px;color:#fff;cursor:pointer">Eliminar</button>\n                </td>\n              </tr>`;
+      return `\n              <tr>\n                <td data-label="ID">${p.id}</td>\n                <td data-label="Nombre">${p.nombre}</td>\n                <td data-label="Precio" class="price">${precio}</td>\n                <td data-label="Stock" class="stock">${p.stock}</td>\n                <td data-label="Acciones">\n                  <button class="btn-edit" data-id="${p.id}" style="background:#60a5fa;border:none;padding:6px 10px;border-radius:6px;color:#fff;cursor:pointer;margin-right:6px">Editar</button>\n                  <button class="btn-delete" data-id="${p.id}" style="background:#f87171;border:none;padding:6px 10px;border-radius:6px;color:#fff;cursor:pointer">Eliminar</button>\n                </td>\n              </tr>`;
     }).join('');
   }
 
@@ -121,10 +141,34 @@ document.addEventListener('DOMContentLoaded', ()=>{
   btnSearch?.addEventListener('click', ()=> doSearch(inputSearch.value.trim()));
   inputSearch?.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); doSearch(inputSearch.value.trim()); } });
 
-  // Borrar producto (event delegation para soportar filas dinámicas)
+  // Borrar / Editar producto (event delegation para soportar filas dinámicas)
   const tableWrap = document.querySelector('.table-wrap');
   if(tableWrap){
     tableWrap.addEventListener('click', async (e)=>{
+      // Edit action
+      const btnEdit = e.target.closest('.btn-edit');
+      if(btnEdit){
+        const id = btnEdit.getAttribute('data-id');
+        try{
+          const res = await fetch('/productos/'+id);
+          if(!res.ok) throw new Error('No se pudo obtener el producto');
+          const p = await res.json();
+          // Prefill form
+          document.getElementById('input-id').value = p.id;
+          document.getElementById('input-nombre').value = p.nombre;
+          document.getElementById('input-precio').value = p.precio;
+          document.getElementById('input-stock').value = p.stock;
+          document.getElementById('editing-id').value = p.id;
+          document.getElementById('form-title').textContent = 'Editar producto';
+          document.getElementById('input-id').disabled = true;
+          document.getElementById('btn-add').textContent = 'Guardar cambios';
+          const formWrap = document.getElementById('product-form'); formWrap.style.display = 'block';
+          window.scrollTo({top: formWrap.offsetTop - 20, behavior: 'smooth'});
+        }catch(err){ await showModal(String(err), {title:'Error', type:'error', confirm:false, okText:'Cerrar'}); }
+        return;
+      }
+
+      // Delete action
       const btn = e.target.closest('.btn-delete');
       if(!btn) return;
       const id = btn.getAttribute('data-id');
@@ -142,4 +186,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
       }catch(err){ await showModal(String(err), {title:'Error', type:'error', confirm:false, okText:'Cerrar'}); }
     });
   }
+
+  // Clean editing state when cancelling
+  btnCancel?.addEventListener('click', ()=>{
+    const editing = document.getElementById('editing-id'); if(editing) editing.value = '';
+    document.getElementById('form-title').textContent = 'Añadir nuevo producto';
+    document.getElementById('input-id').disabled = false;
+    document.getElementById('btn-add').textContent = 'Guardar';
+    formWrap.style.display = 'none'; formMsg.textContent = '';
+  });
 });
