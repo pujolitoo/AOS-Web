@@ -85,6 +85,42 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }catch(err){ await showModal(String(err), {title:'Error', type:'error', confirm:false, okText:'Cerrar'}); }
   });
 
+  // Búsqueda de productos
+  const inputSearch = document.getElementById('input-search');
+  const btnSearch = document.getElementById('btn-search');
+
+  function renderProducts(rows){
+    const tbody = document.querySelector('.table-wrap tbody');
+    if(!tbody) return;
+    tbody.innerHTML = rows.map(p => {
+      const precio = (typeof p.precio === 'number') ? p.precio.toFixed(2) : (p.precio || '0.00');
+      return `\n              <tr>\n                <td data-label="ID">${p.id}</td>\n                <td data-label="Nombre">${p.nombre}</td>\n                <td data-label="Precio" class="price">${precio}</td>\n                <td data-label="Stock" class="stock">${p.stock}</td>\n                <td data-label="Acciones">\n                  <button class="btn-delete" data-id="${p.id}" style="background:#f87171;border:none;padding:6px 10px;border-radius:6px;color:#fff;cursor:pointer">Eliminar</button>\n                </td>\n              </tr>`;
+    }).join('');
+  }
+
+  async function doSearch(q){
+    try{
+      let res;
+      if(!q){
+        res = await fetch('/productos');
+        if(!res.ok) throw new Error('Error al obtener productos');
+        const data = await res.json();
+        renderProducts(data);
+        return;
+      }
+      res = await fetch('/productos/buscar?nombre='+encodeURIComponent(q));
+      const body = await res.json();
+      // buscar devuelve {resultados: [], total: n} o {mensaje:..., resultados: []}
+      const arr = body.resultados || [];
+      renderProducts(arr);
+    }catch(err){
+      await showModal(String(err), {title:'Error', type:'error', confirm:false, okText:'Cerrar'});
+    }
+  }
+
+  btnSearch?.addEventListener('click', ()=> doSearch(inputSearch.value.trim()));
+  inputSearch?.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); doSearch(inputSearch.value.trim()); } });
+
   // Borrar producto (event delegation para soportar filas dinámicas)
   const tableWrap = document.querySelector('.table-wrap');
   if(tableWrap){

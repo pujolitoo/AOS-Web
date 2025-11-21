@@ -56,7 +56,9 @@
           <h1>Productos</h1>
           <div class="meta">Uptime: {{ uptime }} segundos • <span>{{ productos|length }} productos</span></div>
         </div>
-        <div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="input-search" type="search" placeholder="Buscar productos..." style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;min-width:200px">
+          <button id="btn-search" style="background:transparent;color:var(--accent-2);border:1px solid var(--accent);padding:8px 10px;border-radius:8px;cursor:pointer">Buscar</button>
           <button id="btn-show-form" style="background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer">➕ Añadir producto</button>
         </div>
       </header>
