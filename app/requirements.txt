@@ -4,3 +4,5 @@ uvicorn
 httpx
 tinydb
 jinja2
+SQLAlchemy
+psycopg2-binary

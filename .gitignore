@@ -1,6 +1,13 @@
 venv
+.venv
 .DS_Store
+# Ignore compiled Python files and caches
 __pycache__/
-app/__pycache__/
-app/models/__pycache__/
-app/routes/__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Byte-compiled / optimized / DLL files
+__pycache__
+*/__pycache__/

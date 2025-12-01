@@ -6,7 +6,9 @@ import time
 import asyncio
 import signal
 from typing import List, Optional
+import os
 from app.app import get_app
+from app import db as _db
 
 router = APIRouter()
 
@@ -34,6 +36,9 @@ productos: List[Producto] = [
 # Flag de readiness
 is_ready = True
 
+# DB enabled when DATABASE_URL env var is set
+DB_ENABLED = bool(os.getenv("DATABASE_URL"))
+
 
 # ==============================
 # ENDPOINTS CRUD
@@ -41,13 +46,16 @@ is_ready = True
 
 @router.get("/", response_class=HTMLResponse)
 async def root(request: Request):
-        uptime = int(time.time() - get_app().state.start_time)
-        # Renderizar la plantilla Jinja2
-        return templates.TemplateResponse("products.html", {"request": request, "productos": productos, "uptime": uptime})
+    uptime = int(time.time() - get_app().state.start_time)
+    # Renderizar la plantilla Jinja2
+    productos_to_show = _db.list_products_db() if DB_ENABLED else productos
+    return templates.TemplateResponse("products.html", {"request": request, "productos": productos_to_show, "uptime": uptime})
 
 @router.get("/productos")
 async def listar_productos():
     """Devuelve todos los productos"""
+    if DB_ENABLED:
+        return _db.list_products_db()
     return productos
 
 @router.get("/productos/buscar")
@@ -56,7 +64,8 @@ async def buscar_producto(nombre: str = Query(..., description="Nombre o parte d
     Busca productos cuyo nombre contenga el texto proporcionado (no sensible a mayúsculas).
     Ejemplo: /productos/buscar?nombre=teclado
     """
-    resultados = [p for p in productos if nombre.lower() in p.nombre.lower()]
+    source = _db.list_products_db() if DB_ENABLED else productos
+    resultados = [p for p in source if nombre.lower() in p.nombre.lower()]
     if not resultados:
         return {"mensaje": "No se encontraron productos", "resultados": []}
     return {"resultados": resultados, "total": len(resultados)}
@@ -64,6 +73,11 @@ async def buscar_producto(nombre: str = Query(..., description="Nombre o parte d
 @router.get("/productos/{id}")
 async def obtener_producto(id: int):
     """Obtiene un producto por su ID"""
+    if DB_ENABLED:
+        p = _db.get_product_db(id)
+        if p:
+            return p
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
     for p in productos:
         if p.id == id:
             return p
@@ -72,6 +86,11 @@ async def obtener_producto(id: int):
 @router.post("/productos")
 async def crear_producto(producto: Producto):
     """Crea un nuevo producto"""
+    if DB_ENABLED:
+        if _db.get_product_db(producto.id) is not None:
+            raise HTTPException(status_code=400, detail="Ya existe un producto con ese ID")
+        _db.create_product_db(producto)
+        return {"mensaje": "Producto creado", "producto": producto}
     if any(p.id == producto.id for p in productos):
         raise HTTPException(status_code=400, detail="Ya existe un producto con ese ID")
     productos.append(producto)
@@ -80,6 +99,11 @@ async def crear_producto(producto: Producto):
 @router.put("/productos/{id}")
 async def actualizar_producto(id: int, producto: Producto):
     """Actualiza un producto existente"""
+    if DB_ENABLED:
+        updated = _db.update_product_db(id, producto)
+        if updated is None:
+            raise HTTPException(status_code=404, detail="Producto no encontrado")
+        return {"mensaje": "Producto actualizado", "producto": producto}
     for i, p in enumerate(productos):
         if p.id == id:
             productos[i] = producto
@@ -89,6 +113,11 @@ async def actualizar_producto(id: int, producto: Producto):
 @router.delete("/productos/{id}")
 async def eliminar_producto(id: int):
     """Elimina un producto por su ID"""
+    if DB_ENABLED:
+        deleted = _db.delete_product_db(id)
+        if deleted:
+            return {"mensaje": f"Producto con ID {id} eliminado"}
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
     for i, p in enumerate(productos):
         if p.id == id:
             productos.pop(i)
@@ -101,6 +130,11 @@ async def modificar_producto(id: int, cambios: ProductoUpdate):
     Modifica parcialmente un producto (solo los campos enviados).
     Ejemplo body: {"precio": 99.99, "stock": 120}
     """
+    if DB_ENABLED:
+        patched = _db.patch_product_db(id, cambios)
+        if patched is None:
+            raise HTTPException(status_code=404, detail="Producto no encontrado")
+        return {"mensaje": "Producto modificado parcialmente", "producto": patched}
     for p in productos:
         if p.id == id:
             if cambios.nombre is not None:
@@ -165,6 +199,10 @@ async def async_sleep(segundos: float = Query(2.0, ge=0.1, le=60.0)):
 @router.on_event("startup")
 async def on_startup():
     get_app().state.start_time = time.time()
+    # Inicializar DB si está configurada
+    if DB_ENABLED:
+        _db.init_db()
+        print("📦 Conectado a la base de datos (DATABASE_URL)")
     print("🚀 Aplicación iniciada correctamente")
 
 @router.on_event("shutdown")
