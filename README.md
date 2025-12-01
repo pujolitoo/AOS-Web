@@ -70,6 +70,41 @@ By default, the app will be available at `http://127.0.0.1:8000`. You can access
 - **Swagger UI**: `http://127.0.0.1:8000/docs`
 - **ReDoc**: `http://127.0.0.1:8000/redoc`
 
+### 4.a **Run with Docker (recommended for reproducible runs)**
+
+If you prefer running the application in a container, the project includes a `Dockerfile` and a `docker-compose.yml` for local development.
+
+- Build the image locally and run it with Docker:
+
+```bash
+docker build -t aos-web:latest .
+docker run --rm -p 8000:8000 aos-web:latest
+```
+
+- Or use Docker Compose (recommended: it also provides a Postgres service for local testing):
+
+```bash
+docker compose up --build
+```
+
+The app will be available at `http://127.0.0.1:8000` when the container is running.
+
+Environment variables:
+- `DATABASE_URL` — if set, the application will use PostgreSQL via SQLAlchemy. When using `docker-compose.yml` the `db` service is included for local testing and `DATABASE_URL` is configured automatically. For production, point `DATABASE_URL` to an RDS or managed Postgres instance (example: `postgresql://user:pass@host:5432/dbname`).
+
+To run the app in background (detached mode) with Docker Compose:
+
+```bash
+docker compose up --build -d
+```
+
+To stop and remove containers:
+
+```bash
+docker compose down
+```
+
+
 ### 5. **Testing the API with `pytest`**
 
 Unit tests for the API are included in the `app/tests/test_sample.py` file. You can run the tests using `pytest`.
