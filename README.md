@@ -1,5 +1,22 @@
 # Product Management Application
 
+## Table of Contents
+
+1. [Group 7](#group-7)
+2. [Project Objectives](#project-objectives)
+3. [What We've Implemented](#what-weve-implemented)
+4. [Project Structure](#project-structure)
+   - [Services](#services)
+5. [How to Run the Application](#how-to-run-the-application)
+   - [Option 1: Docker Compose](#option-1-docker-compose-recommended)
+   - [Option 2: Manual Build](#option-2-manual-build-of-each-service)
+   - [Option 3: Local Development](#option-3-local-development-without-docker)
+6. [Environment Variables](#environment-variables)
+7. [Architecture](#architecture)
+8. [Communication Flow](#communication-flow)
+9. [Advantages of This Architecture](#advantages-of-this-architecture)
+10. [AWS Deployment](#aws-deployment)
+
 ## Group 7
 - Members:
 -   Joel Navarro
@@ -20,83 +37,251 @@
 - We've added new API routes to help the management of product metadata (add, delete, modify, etc..). 
 - We created the first database to store product information
 
-## How to run the application
-### 1. **Clone the Project**
+## Project Structure
 
-First, clone the project repository to your local machine:
+El proyecto está dividido en dos servicios independientes en **carpetas separadas**:
 
-```bash
-git clone https://github.com/mcastrol/aossample.git
-cd aossample
+```
+AOS-Web/
+├── api/              # Backend (API REST)
+│   ├── models/
+│   ├── routes/
+│   ├── main.py
+│   ├── app.py
+│   ├── db.py
+│   └── requirements.txt
+├── web/              # Frontend (interfaz web)
+│   ├── static/
+│   ├── templates/
+│   ├── main.py
+│   ├── app.py
+│   └── requirements.txt
+├── Dockerfile.api    # Imagen Docker del API
+├── Dockerfile.web    # Imagen Docker del Frontend
+└── docker-compose.yml
 ```
 
-### 2. **Create and Activate a Python Virtual Environment**
+### Services
 
-Create a virtual environment to manage dependencies. This ensures that project-specific packages are isolated from your global Python environment.
+#### 1. API (Backend) - Carpeta `api/`
+- **Puerto**: 8000
+- **Dockerfile**: `Dockerfile.api`
+- **Punto de entrada**: `api/main.py`
+- **Responsabilidades**:
+  - Endpoints REST JSON (`/productos`, `/health`, `/ready`, etc.)
+  - Conexión a base de datos PostgreSQL
+  - Lógica de negocio y operaciones CRUD
 
-**On Linux/macOS**:
+#### 2. Web (Frontend) - Carpeta `web/`
+- **Puerto**: 3000
+- **Dockerfile**: `Dockerfile.web`
+- **Punto de entrada**: `web/main.py`
+- **Responsabilidades**:
+  - Servir la interfaz HTML (templates Jinja2)
+  - Servir archivos estáticos (CSS, JS)
+  - Actuar como proxy entre el navegador y el API backend
+
+#### 3. DB (Base de datos)
+- **Puerto**: 5432 (interno)
+- **Imagen**: `postgres:15`
+- **Usado por**: Servicio API
+
+## How to run the application
+
+### Option 1: Docker Compose (Recommended)
+
+```bash
+# Build and start all services
+docker compose up --build
+
+# Or in detached mode (background)
+docker compose up --build -d
+
+# View logs
+docker compose logs -f
+
+# View logs of a specific service
+docker compose logs -f api
+docker compose logs -f web
+
+# Stop services
+docker compose down
+```
+
+Once the services are running:
+
+- **Web Interface**: http://localhost:3000
+- **API Direct**: http://localhost:8000
+- **API Documentation (Swagger)**: http://localhost:8000/docs
+- **Health checks**:
+  - API: http://localhost:8000/health
+  - Frontend: http://localhost:3000/health
+
+### Option 2: Manual Build of Each Service
+
+```bash
+# Build API image
+docker build -t aos-api:latest -f Dockerfile.api .
+
+# Build Frontend image
+docker build -t aos-web:latest -f Dockerfile.web .
+
+# Create custom network
+docker network create aos-network
+
+# Run database
+docker run -d \
+  --name aos-db \
+  --network aos-network \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=aosdb \
+  postgres:15
+
+# Run API
+docker run -d \
+  --name aos-api \
+  --network aos-network \
+  -p 8000:8000 \
+  -e DATABASE_URL=postgresql://postgres:postgres@aos-db:5432/aosdb \
+  aos-api:latest
+
+# Run Frontend
+docker run -d \
+  --name aos-web \
+  --network aos-network \
+  -p 3000:3000 \
+  -e API_URL=http://aos-api:8000 \
+  aos-web:latest
+```
+
+### Option 3: Local Development (without Docker)
+
+#### Prerequisites
+- PostgreSQL running locally (or skip `DATABASE_URL` to use in-memory mode)
+- Python 3.8+
+
+#### Running the API
+
+**From the project root directory** (`/home/ppujol/AOS-Web/`):
+
 ```bash
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+pip install -r api/requirements.txt
+
+# Run from the root directory with the module syntax
+python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+
+# Or set DATABASE_URL if you want to use PostgreSQL
+export DATABASE_URL=postgresql://user:password@localhost:5432/aosdb
+python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-**On Windows**:
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
+#### Running the Web Frontend
 
-### 3. **Install Dependencies from `requirements.txt`**
-
-Once the virtual environment is activated, install the project dependencies using `requirements.txt`.
-
-```bash
-pip install -r app/requirements.txt
-```
-
-This will install all the necessary packages such as FastAPI, Uvicorn, and Pytest.
-
-### 4. **Run the FastAPI Application**
-
-To run the FastAPI application, use the following command:
+**From the project root directory** (`/home/ppujol/AOS-Web/`), in a **new terminal**:
 
 ```bash
-uvicorn app.main:app --reload
+source venv/bin/activate  # Use the same venv from above
+
+pip install -r web/requirements.txt
+
+# Set API URL to point to the local API
+export API_URL=http://localhost:8000
+
+# Run from the root directory with the module syntax
+python -m uvicorn web.main:app --reload --host 0.0.0.0 --port 3000
 ```
 
-The `--reload` option is useful in development mode because it reloads the app when changes are made to the code.
+#### Accessing the Application
 
-By default, the app will be available at `http://127.0.0.1:8000`. You can access the API documentation via:
-- **Swagger UI**: `http://127.0.0.1:8000/docs`
-- **ReDoc**: `http://127.0.0.1:8000/redoc`
+Once both services are running:
+- **Web Interface**: http://localhost:3000
+- **API Documentation**: http://localhost:8000/docs
 
-### 4.a **Run with Docker (recommended for reproducible runs)**
+> **Important**: Always run from the **project root directory** using `python -m uvicorn`, not from inside the `api/` or `web/` folders. This ensures the `api` and `web` modules are correctly recognized in the Python path.
 
-If you prefer running the application in a container, the project includes a `Dockerfile` and a `docker-compose.yml` for local development.
+## Environment Variables
 
-- Build the image locally and run it with Docker:
+### API Service (`api`)
+- `DATABASE_URL`: PostgreSQL connection URL (e.g., `postgresql://user:pass@host:5432/dbname`)
+- `PYTHONUNBUFFERED`: Disables Python output buffering
 
-```bash
-docker build -t aos-web:latest .
-docker run --rm -p 8000:8000 aos-web:latest
+### Web Service (`web`)
+- `API_URL`: Internal URL of the API service (e.g., `http://api:8000`)
+- `PYTHONUNBUFFERED`: Disables Python output buffering
+
+### DB Service (`db`)
+- `POSTGRES_USER`: PostgreSQL user
+- `POSTGRES_PASSWORD`: PostgreSQL password
+- `POSTGRES_DB`: Database name
+
+## Architecture
+
+```
+┌─────────────┐
+│   Browser   │
+└──────┬──────┘
+       │ http://localhost:3000
+       ▼
+┌─────────────────┐
+│  Web (Frontend) │ :3000
+│  - Templates    │
+│  - Statics      │
+│  - Proxy /api/* │
+└────────┬────────┘
+         │ http://api:8000 (Docker internal network)
+         ▼
+┌─────────────────┐
+│   API (Backend) │ :8000
+│  - REST JSON    │
+│  - CRUD Logic   │
+└────────┬────────┘
+         │ postgresql://...@db:5432
+         ▼
+┌─────────────────┐
+│   DB (Postgres) │ :5432
+│  - Data persist │
+└─────────────────┘
 ```
 
-- Or use Docker Compose (recommended: it also provides a Postgres service for local testing):
+## Communication Flow
 
-```bash
-docker compose up --build
-```
+1. Browser loads the page from `http://localhost:3000/`
+2. The `web` service renders HTML with Jinja2 and serves static files
+3. JavaScript in the browser makes requests to `/api/*`
+4. The `web` service acts as a proxy and forwards requests to `http://api:8000/*`
+5. The `api` service processes the request and queries the database if needed
+6. The `api` returns JSON to `web`, which forwards it to the browser
 
-The app will be available at `http://127.0.0.1:8000` when the container is running.
+## Advantages of This Architecture
 
-Environment variables:
-- `DATABASE_URL` — if set, the application will use PostgreSQL via SQLAlchemy. When using `docker-compose.yml` the `db` service is included for local testing and `DATABASE_URL` is configured automatically. For production, point `DATABASE_URL` to an RDS or managed Postgres instance (example: `postgresql://user:pass@host:5432/dbname`).
+1. **Separation of concerns**: Backend and frontend can be developed, deployed, and scaled independently
+2. **Horizontal scaling**: You can have multiple API instances without replicating the frontend
+3. **Flexible deployment**:
+   - In development: both services locally
+   - In production: API in ECS/EC2, Frontend in CloudFront + S3 or lightweight web server
+4. **Independent testing**: Each service can be tested separately
+5. **Resource optimization**: Smaller and more specific Docker images for each service
 
-To run the app in background (detached mode) with Docker Compose:
+## AWS Deployment
 
-```bash
-docker compose up --build -d
-```
+### Option 1: Elastic Beanstalk Multi-Container
+Use `docker-compose.yml` as a base to create a `Dockerrun.aws.json` v2
+
+### Option 2: ECS/Fargate
+- Create separate task definitions for `api` and `web`
+- Use ALB to route:
+  - `/api/*` → API service
+  - `/*` → Web service
+- Connect API to RDS PostgreSQL
+
+### Option 3: EC2 with Docker Compose
+- Launch EC2 with Docker installed
+- Clone repository and run `docker compose up -d`
+- Configure ALB/Security Groups appropriately
 
 To stop and remove containers:
 
@@ -107,7 +292,7 @@ docker compose down
 
 ### 5. **Testing the API with `pytest`**
 
-Unit tests for the API are included in the `app/tests/test_sample.py` file. You can run the tests using `pytest`.
+Unit tests for the API are included in the `api/tests/test_sample.py` file. You can run the tests using `pytest`.
 
 To run the tests, simply execute:
 

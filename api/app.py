@@ -1,4 +1,4 @@
-# Este archivo es para evitar importanciones cíclicas
+# Este archivo es para evitar importaciones cíclicas
 
 from fastapi import FastAPI
 

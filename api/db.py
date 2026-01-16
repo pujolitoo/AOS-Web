@@ -3,7 +3,7 @@ from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import declarative_base, sessionmaker
-from app.models.product import Producto
+from api.models.product import Producto
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -30,6 +30,27 @@ def init_db():
     SessionLocal = sessionmaker(bind=engine)
     # Create tables if they don't exist
     Base.metadata.create_all(bind=engine)
+    
+    # Insert default products if table is empty
+    session = SessionLocal()
+    try:
+        count = session.query(ProductORM).count()
+        if count == 0:
+            default_products = [
+                ProductORM(id=1, nombre="Laptop", precio=999.99, stock=10),
+                ProductORM(id=2, nombre="Mouse", precio=29.99, stock=50),
+                ProductORM(id=3, nombre="Teclado", precio=79.99, stock=30),
+                ProductORM(id=4, nombre="Monitor", precio=349.99, stock=15),
+                ProductORM(id=5, nombre="Webcam", precio=89.99, stock=20),
+            ]
+            session.add_all(default_products)
+            session.commit()
+            print("✓ Productos por defecto insertados")
+    except SQLAlchemyError as e:
+        session.rollback()
+        print(f"Error insertando productos por defecto: {e}")
+    finally:
+        session.close()
 
 
 def list_products_db() -> List[Producto]:

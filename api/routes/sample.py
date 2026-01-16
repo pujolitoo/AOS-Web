@@ -1,26 +1,15 @@
-from fastapi import FastAPI, HTTPException, Query, APIRouter, Request
-from fastapi.responses import JSONResponse, HTMLResponse
-from fastapi.templating import Jinja2Templates
-from pathlib import Path
+from fastapi import HTTPException, Query, APIRouter
+from fastapi.responses import JSONResponse
 import time
 import asyncio
 import signal
-from typing import List, Optional
+from typing import List
 import os
-from app.app import get_app
-from app import db as _db
+from api.app import get_app
+from api import db as _db
+from api.models.product import *
 
 router = APIRouter()
-
-# Configurar plantillas (usa la carpeta `app/templates`)
-templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
-
-# ==============================
-# MODELOS
-# ==============================
-
-from app.models.product import *
-
 
 # ==============================
 # DATOS EN MEMORIA
@@ -43,13 +32,6 @@ DB_ENABLED = bool(os.getenv("DATABASE_URL"))
 # ==============================
 # ENDPOINTS CRUD
 # ==============================
-
-@router.get("/", response_class=HTMLResponse)
-async def root(request: Request):
-    uptime = int(time.time() - get_app().state.start_time)
-    # Renderizar la plantilla Jinja2
-    productos_to_show = _db.list_products_db() if DB_ENABLED else productos
-    return templates.TemplateResponse("products.html", {"request": request, "productos": productos_to_show, "uptime": uptime})
 
 @router.get("/productos")
 async def listar_productos():

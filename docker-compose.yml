@@ -1,6 +1,8 @@
 services:
-  web:
-    build: .
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
     ports:
       - "8000:8000"
     restart: unless-stopped
@@ -8,7 +10,7 @@ services:
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/aosdb
     volumes:
-      - ./app:/app/app:ro
+      - ./api:/app/api:ro
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; r=urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2); sys.exit(0 if r.getcode()==200 else 1)\""]
       interval: 10s
@@ -17,6 +19,28 @@ services:
       start_period: 5s
     depends_on:
       - db
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - API_URL=http://api:8000
+    volumes:
+      - ./web/static:/app/web/static:ro
+      - ./web/templates:/app/web/templates:ro
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; r=urllib.request.urlopen('http://127.0.0.1:3000/health', timeout=2); sys.exit(0 if r.getcode()==200 else 1)\""]
+      interval: 10s
+      timeout: 2s
+      retries: 3
+      start_period: 5s
+    depends_on:
+      - api
 
   db:
     image: postgres:15

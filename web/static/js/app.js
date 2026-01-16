@@ -1,4 +1,15 @@
 // JS para la interfaz de productos: formulario, modal y acciones CRUD
+// API_BASE_URL se configura dinámicamente para apuntar al servicio backend
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+  ? 'http://localhost:8000'  // Desarrollo local
+  : 'http://api:8000';        // Docker compose (desde el navegador no funcionará, se debe usar proxy o mismo host)
+
+// Para docker-compose, el frontend proxy las peticiones o usamos el mismo puerto
+// Por simplicidad, usaremos rutas relativas que el navegador resolverá contra el puerto actual
+// y agregaremos un proxy en el frontend si es necesario.
+// Por ahora, asumiremos que el API está en el mismo host pero diferente puerto para desarrollo.
+const API_URL = '/api'; // El frontend hará proxy de /api -> api:8000
+
 document.addEventListener('DOMContentLoaded', ()=>{
   const btnShow = document.getElementById('btn-show-form');
   const formWrap = document.getElementById('product-form');
@@ -78,7 +89,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     try{
       if(editing){
         // Edit mode -> PUT
-        const res = await fetch('/productos/'+editing, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+        const res = await fetch(API_URL + '/productos/'+editing, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
         const body = await res.json();
         if(res.ok){
           await showModal(body.mensaje || 'Actualizado correctamente', {title:'Éxito', type:'info', confirm:false, okText:'Cerrar'});
@@ -93,7 +104,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
         }
       } else {
         // Create
-        const res = await fetch('/productos', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+        const res = await fetch(API_URL + '/productos', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
         const body = await res.json();
         if(res.ok){
           await showModal(body.mensaje || 'Creado correctamente', {title:'Éxito', type:'info', confirm:false, okText:'Cerrar'});
@@ -122,13 +133,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
     try{
       let res;
       if(!q){
-        res = await fetch('/productos');
+        res = await fetch(API_URL + '/productos');
         if(!res.ok) throw new Error('Error al obtener productos');
         const data = await res.json();
         renderProducts(data);
         return;
       }
-      res = await fetch('/productos/buscar?nombre='+encodeURIComponent(q));
+      res = await fetch(API_URL + '/productos/buscar?nombre='+encodeURIComponent(q));
       const body = await res.json();
       // buscar devuelve {resultados: [], total: n} o {mensaje:..., resultados: []}
       const arr = body.resultados || [];
@@ -150,7 +161,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(btnEdit){
         const id = btnEdit.getAttribute('data-id');
         try{
-          const res = await fetch('/productos/'+id);
+          const res = await fetch(API_URL + '/productos/'+id);
           if(!res.ok) throw new Error('No se pudo obtener el producto');
           const p = await res.json();
           // Prefill form
@@ -175,7 +186,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const ok = await showModal('¿Eliminar producto con ID '+id+'?', {title:'Confirmar eliminación', type:'confirm', confirm:true, okText:'Eliminar', cancelText:'Cancelar'});
       if(!ok) return;
       try{
-        const res = await fetch('/productos/'+id, {method:'DELETE'});
+        const res = await fetch(API_URL + '/productos/'+id, {method:'DELETE'});
         if(res.ok){
           // Quitar fila del DOM
           const row = btn.closest('tr'); if(row) row.remove();

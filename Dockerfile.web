@@ -1,0 +1,24 @@
+FROM python:3.12-slim
+
+# Prevent Python from writing .pyc files and buffer stdout/stderr
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Copy requirements and install
+COPY web/requirements.txt ./requirements.txt
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# Copy only frontend-related files
+COPY web/ ./web/
+
+# Create a non-root user and switch to it
+RUN useradd -m appuser || true
+USER appuser
+
+EXPOSE 3000
+
+# Run the web frontend service
+CMD ["uvicorn", "web.main:app", "--host", "0.0.0.0", "--port", "3000"]
